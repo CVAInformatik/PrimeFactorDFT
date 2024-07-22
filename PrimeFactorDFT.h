@@ -21,7 +21,7 @@ Inspiration originally from
 */
 #include <vector>
 
-#if 0   // windows
+#ifdef OS_WINDOWS    // windows
 #define WIN
 typedef unsigned __int64  u64;
 typedef __int64  s64;
@@ -42,6 +42,7 @@ class BasicDFT {
 
 public:
 	BasicDFT() { count = 0; };
+	virtual ~BasicDFT() { indices.clear(); }
 	virtual void Evaluate(Data *read, Data *imag) = 0;
 
 protected:
@@ -66,11 +67,11 @@ public:
 	DFT2(int  Rotation, s64 Count, std::vector<s64> startIndices)
 	{
 		count = Count;
-
+		(void) Rotation;
 		indices = startIndices;
 
 	};
-
+	~DFT2() { indices.clear(); }
 	void Evaluate(Data* real, Data* imag);
 private:
 
@@ -108,6 +109,7 @@ public:
 		for (int i = 0; i < FFTLENGTH; i++)
 			active_op[i] = op[Rotations[i]];
 	};
+	~DFT3() { indices.clear(); }
 
 	void Evaluate(Data *real, Data *imag);
 private:
@@ -153,6 +155,7 @@ public:
 		for (int i = 0; i < FFTLENGTH; i++)
 			active_op[i] = op[Rotations[i]];
 	};
+	~DFT5() { indices.clear(); }
 
 	void Evaluate(Data* real, Data* imag);
 private:
@@ -202,6 +205,7 @@ public:
 		for (int i = 0; i < FFTLENGTH; i++)
 			active_op[i] = op[Rotations[i]];
 	};
+	~DFT7() { indices.clear(); }
 
 	void Evaluate(Data* real, Data* imag);
 private:
@@ -263,6 +267,7 @@ public:
 
 	}
 	
+	~DFT11() { indices.clear(); }
 
 	void Evaluate(Data* real, Data* imag);
 
@@ -326,6 +331,8 @@ public:
 		for (int i = 0; i < FFTLENGTH; i++)
 			active_op[i] = op[Rotations[i]];
 	}
+	~DFT13() { indices.clear(); }
+
 	void Evaluate(Data* real, Data* imag);
 private:
 
@@ -409,6 +416,7 @@ public:
 		for (int i = 0; i < FFTLENGTH; i++)
 			active_op[i] = op[Rotations[i]];
 	}
+	~DFT17() { indices.clear(); }
 	void Evaluate(Data* real, Data* imag);
 
 private:
@@ -493,6 +501,7 @@ public:
 		for (int i = 0; i < FFTLENGTH; i++)
 			active_op[i] = op[Rotations[i]];
 	}
+	~DFT19() { indices.clear(); }
 
 	void Evaluate(Data* real, Data* imag);
 private:
@@ -631,6 +640,8 @@ public:
 
 
 	}
+	~DFT31() { indices.clear(); }
+
 	void Evaluate(Data *real, Data* imag);
 
 private:
@@ -649,6 +660,10 @@ class PrimeFactorDFT
 public:
 	
 	PrimeFactorDFT() {};
+	~PrimeFactorDFT() { 
+		Rotations.clear();
+		while (DFTs.size()) { delete DFTs.back(); DFTs.pop_back(); }
+	};
 
 	void SetFactors(factorSeq& _factors) {
 		factors = _factors;
@@ -663,7 +678,7 @@ public:
 	void GetFactors(factorSeq& _factors) {_factors = factors;};
 
 	int CalcFactors(uint length, factorSeq& _factors, int factorCount = 0);
-
+	int FastCalcFactors(uint length, factorSeq& _factors);
 	/*
 	*  Based of the factors provided.
 	*  if > 0 the length of the FFT.
@@ -678,6 +693,7 @@ public:
 	void ScaledInverseFFT(Data* real, Data *imag);
 
 private:
+	int FindFactors(uint length, uint start, uint end, uint* LengthTable);
 
 	s64 ValidateFactors(factorSeq& _factors);
 	s64 state;

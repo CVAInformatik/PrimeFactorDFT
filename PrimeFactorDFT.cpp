@@ -100,8 +100,14 @@ void PrimeFactorDFT::InitDFT(factorSeq& _factors, std::vector<BasicDFT*> &_DFTs)
 
 }
 
-void PrimeFactorDFT::CleanUpDFT( std::vector<BasicDFT*> &_DTFs)
-{}
+void PrimeFactorDFT::CleanUpDFT( std::vector<BasicDFT*> &_DFTs)
+{
+    while (_DFTs.size()) {
+        delete _DFTs.back();
+        _DFTs.pop_back();
+    }
+    //(void)_DTFs;
+}
 
 void PrimeFactorDFT::forwardFFT(Data* real, Data *imag)
 {
@@ -131,13 +137,53 @@ void PrimeFactorDFT::ScaledInverseFFT(Data* real, Data *imag)
 	}
 };
 
+int PrimeFactorDFT::FindFactors(uint length, uint start, uint end, uint* LengthTable)
+{
+    (void)start;
+    for(uint i = 0; i < end; i++)
+        if(LengthTable[i] > length) return LengthTable[i];
+    return 0;
+}
+
+
+int PrimeFactorDFT::FastCalcFactors(uint length, factorSeq& _factors)
+{
+
+    unsigned int LengthTable[] = {
+          /* 31, 51, 70, 102, 154, 209,  310, 403, 546,
+          these are not used for Schönhage-Strassen  when SSLIMIT is 220, 
+          adjust to your liking */ 
+          806, 1209, 1870, 2470,
+         3705, 5005, 7106, 10013, 15314, 22971, 38285, 53599, 84227, 130169,
+       202895, 300390, 452166, 680295, 1051365, 1542002, 2102730, 3537534,
+      5275270, 7159295, 10023013, 14318590, 20046026, 30069039, 42955770,
+     60138078, 100230130, 150345195, 300690390 };
+
+    uint actualLength = 0;
+
+    actualLength = FindFactors(length, 0, (sizeof(LengthTable) / sizeof(LengthTable[0])), LengthTable);
+
+    _factors.clear();
+
+    if ((actualLength % 2 )== 0) _factors.push_back(2);
+    if ((actualLength % 3) == 0) _factors.push_back(3);
+    if ((actualLength % 5) == 0) _factors.push_back(5);
+    if ((actualLength % 7) == 0) _factors.push_back(7);
+    if ((actualLength % 11) == 0) _factors.push_back(11);
+    if ((actualLength % 13) == 0) _factors.push_back(13);
+    if ((actualLength % 17) == 0) _factors.push_back(17);
+    if ((actualLength % 19) == 0) _factors.push_back(19);
+    if ((actualLength % 31) == 0) _factors.push_back(31);
+
+    return actualLength;
+}
 
 int PrimeFactorDFT::CalcFactors(uint length, factorSeq& _factors, int factorCount)
 {
     std::list<unsigned int> lengthList;
 
 
-    for(int ix = 0; ix < 512; ix++) {
+    for (int ix = 0; ix < 512; ix++) {
 
         int hw = 0;
         if (factorCount) {
@@ -147,7 +193,7 @@ int PrimeFactorDFT::CalcFactors(uint length, factorSeq& _factors, int factorCoun
                 hw++;
             }
         }
-        if (factorCount && ( hw > factorCount)) continue;
+        if (factorCount && (hw > factorCount)) continue;
 
         uint tlength = 1;
         if (ix & 1) tlength *= 2;
@@ -162,19 +208,20 @@ int PrimeFactorDFT::CalcFactors(uint length, factorSeq& _factors, int factorCoun
         lengthList.push_back(tlength);
     }
     lengthList.sort();
-
     uint actualLength = 0;
-    _factors.clear();
 
-    for (std::list<unsigned int>::const_iterator ibegin = lengthList.begin(); 1 ; ibegin++)
-        if (ibegin == lengthList.end())  return -1;        
+    for (std::list<unsigned int>::const_iterator ibegin = lengthList.begin(); 1; ibegin++)
+        if (ibegin == lengthList.end())  return -1;
         else if (*ibegin >= length)
         {
             actualLength = *ibegin;
             break;
         }
 
-    if ((actualLength % 2 )== 0) _factors.push_back(2);
+
+    _factors.clear();
+
+    if ((actualLength % 2) == 0) _factors.push_back(2);
     if ((actualLength % 3) == 0) _factors.push_back(3);
     if ((actualLength % 5) == 0) _factors.push_back(5);
     if ((actualLength % 7) == 0) _factors.push_back(7);
@@ -186,6 +233,7 @@ int PrimeFactorDFT::CalcFactors(uint length, factorSeq& _factors, int factorCoun
 
     return actualLength;
 }
+
 
 
 /*
